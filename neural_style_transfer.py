@@ -3,6 +3,7 @@
 import numpy as np
 import os
 import argparse
+import json
 
 import torch
 from torch.optim import Adam, LBFGS
@@ -57,7 +58,7 @@ def neural_style_transfer(config):
     # Output directory name
     output_dir_name = f"styled_{os.path.split(content_image_path)[1].split('.')[0]}_{os.path.split(style_image_path)[1].split('.')[0]}"
 
-    dump_path = os.path.join(config["output_image_dir"], output_dir_name)
+    dump_path = os.path.join(config["output_images_dir"], output_dir_name)
     os.makedirs(dump_path, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -91,20 +92,20 @@ def neural_style_transfer(config):
     target_style_representation = [utils.gram_matrix(x) for cnt, x in enumerate(style_image_set_of_feature_maps) if cnt in style_feature_maps_indices_names[0]]
     target_representations = [target_content_representation, target_style_representation]
 
-    num_iterations = {"lbfgs": 200, "adam": 3000}
+    num_iterations = int(config["iterations"])
 
     if config["optimizer"] == "adam":
         optimizer = Adam((optimizing_image,), lr=1e1)
         tuning_step = make_tuning_step(neural_net, optimizer, target_representations, content_feature_maps_index_name[0], style_feature_maps_indices_names[0], config)
-        for cnt in range(num_iterations[config["optimizer"]]):
+        for cnt in range(num_iterations):
             total_loss, content_loss, style_loss, tv_loss = tuning_step(optimizing_image)
             
             with torch.no_grad():
                 print(f'Epoch: {cnt:03}, Total loss={total_loss.item():12.4f}, Content loss={config["content_weight"] * content_loss.item():12.4f}, Style loss={config["style_weight"] * style_loss.item():12.4f}, Tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
-                utils.save_and_maybe_display(optimizing_image, dump_path, config, cnt, num_iterations[config["optimizer"]], should_display=False)
+                utils.save_and_maybe_display(optimizing_image, dump_path, config, cnt, num_iterations, should_display=False)
     
     elif config["optimizer"] == "lbfgs":
-        optimizer = LBFGS((optimizing_image,), max_iter=num_iterations["lbfgs"], line_search_fn="strong_wolfe")
+        optimizer = LBFGS((optimizing_image,), max_iter=num_iterations, line_search_fn="strong_wolfe")
         cnt = 0
 
         def closure():
@@ -118,7 +119,7 @@ def neural_style_transfer(config):
 
             with torch.no_grad():
                 print(f'Epoch: {cnt:03}, Total loss={total_loss.item():12.4f}, Content loss={config["content_weight"] * content_loss.item():12.4f}, Style loss={config["style_weight"] * style_loss.item():12.4f}, Tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
-                utils.save_and_maybe_display(optimizing_image, dump_path, config, cnt, num_iterations[config["optimizer"]], should_display=False)
+                utils.save_and_maybe_display(optimizing_image, dump_path, config, cnt, num_iterations, should_display=False)
 
             cnt += 1
             return total_loss
@@ -129,38 +130,24 @@ def neural_style_transfer(config):
 
 
 if __name__ == "__main__":
-    default_resource_dir = os.path.join(os.path.dirname(__file__), "data")
-    content_images_dir = os.path.join(default_resource_dir, "input_images")
-    style_images_dir = os.path.join(default_resource_dir, "style_images")
-    output_image_dir = os.path.join(default_resource_dir, "output_images")
-    image_format = (4, ".jpg") 
+    # Loading config
+    with open("config.json", "r", encoding="utf8") as json_file:
+        optimization_config = json.load(json_file)
+    
+    # Fixing paths
+    optimization_config["content_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["content_images_dir"])
+    optimization_config["style_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["style_images_dir"])
+    optimization_config["output_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["output_images_dir"])
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str, help="content image name", default="domagoj.jpg")
-    parser.add_argument("--style", type=str, help="style image name", default="cubist.jpg")
-    parser.add_argument("--height", type=int, help="height of content and style images", default=400)
-
-    parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
-    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=3e4)
-    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
-
-    parser.add_argument("--optimizer", type=str, choices=["lbfgs", "adam"], default="lbfgs")
-    parser.add_argument("--model", type=str, choices=["vgg16", "vgg19"], default="vgg19")
-    parser.add_argument("--init_method", type=str, choices=["random", "content", "style"], default="content")
-    parser.add_argument("--freq", type=int, help="saving frequency for images (-1 means only final image is saved)", default=-1)
-    parser.add_argument("--video", type=bool, help="save video (true/false)", default=False)
-    args = parser.parse_args()
-
-    optimization_config = dict()
-    for arg in vars(args):
-        optimization_config[arg] = getattr(args, arg)
-
-    optimization_config["content_images_dir"] = content_images_dir
-    optimization_config["style_images_dir"] = style_images_dir
-    optimization_config["output_image_dir"] = output_image_dir
-    optimization_config["image_format"] = image_format
-
+    '''
+    # Copying optimization config into config file
+    with open("config.json", "w", encoding="utf8") as json_file:
+        json.dump(optimization_config, json_file, indent=4)
+    '''
+    
     results_path = neural_style_transfer(optimization_config)
 
+
     if optimization_config["video"]:
-        utils.create_video(results_path, image_format)
+        utils.create_video(results_path, optimization_config["image_format"])
+    
