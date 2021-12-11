@@ -14,7 +14,7 @@ Install: terminal -> `pip3 install -r requirements.txt`
 All parameters are setup in `config.json` file
 
 Parameters: <br>
-* `image` - content image - name of content image, eg. *`lion.jpg` <br>
+* `image` - content image - name of content image, eg. `lion.jpg` <br>
 * `style` - style image - name of style image, eg. `cubist.jpg` <br>
 * `content_images_dir` - relative path to content images folder, eg. `data/content_images/` <br>
 * `style_images_dir` - relative path to style images folder, eg. `data/style_images/` <br>
