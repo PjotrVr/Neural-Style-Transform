@@ -18,6 +18,7 @@ IMAGENET_STD_NEUTRAL = [1, 1, 1]
 def load_image(image_path, target_shape=None):
     if not os.path.exists(image_path):
         raise Exception(f"Path does not exist: {image_path}")
+
     image = cv.imread(image_path)[:, :, ::-1]
 
     if target_shape is not None:
@@ -31,7 +32,7 @@ def load_image(image_path, target_shape=None):
             image = cv.resize(image, (target_shape[1], target_shape[0]), interpolation=cv.INTER_CUBIC)
 
     image = image.astype(np.float32)
-    image /= 255.0  
+    image /= 255.0  # Pixel values range [0, 1]
     return image
 
 def prepare_image(image_path, target_shape, device):
@@ -62,14 +63,14 @@ def generate_output_image_name(config):
     
     return prefix + suffix
 
-def save_and_maybe_display(optimizing_image, dump_path, config, image_id, num_of_iterations, should_display=False):
+def save_and_maybe_display(optimizing_image, dump_path, config, image_id, num_iterations, should_display=False):
     saving_freq = config["freq"]
     output_image = optimizing_image.squeeze(axis=0).to("cpu").detach().numpy()
     output_image = np.moveaxis(output_image, 0, 2)
 
     # Frequency -1 only saves last image after training
     # Frequency 1 saves all images while training
-    if image_id == num_of_iterations-1 or (saving_freq > 0 and image_id % saving_freq == 0):
+    if image_id == num_iterations-1 or (saving_freq > 0 and image_id % saving_freq == 0):
         image_format = config["image_format"]
         output_image_name = str(image_id).zfill(image_format[0]) + image_format[1] if saving_freq != -1 else generate_output_image_name(config)
         dump_image = np.copy(output_image)
@@ -93,7 +94,6 @@ def get_uint8_range(x):
         raise ValueError(f"Expected numpy array got {type(x)}")
 
 def prepare_model(model, device):
-    experimental = False
     if model == "vgg16":
         model = Vgg16(requires_grad=False, show_progress=True)
 
@@ -128,18 +128,18 @@ def total_variation(y):
 
 # Creating video from results
 def create_video(results_path, image_format):
-    out_file_name = "full_training_footage.mp4"
+    output_file_name = "full_training_footage.mp4"
     fps = 30
     first_frame = 0
-    number_of_frames_to_process = len(os.listdir(results_path))
+    num_frames = len(os.listdir(results_path))
 
     ffmpeg = "ffmpeg"
     if shutil.which(ffmpeg):
         image_name_format = "%" + str(image_format[0]) + "d" + image_format[1]
         pattern = os.path.join(results_path, image_name_format)
-        output_video_path = os.path.join(results_path, out_file_name)
+        output_video_path = os.path.join(results_path, output_file_name)
 
-        trim_video_command = ["-start_number", str(first_frame), "-vframes", str(number_of_frames_to_process)]
+        trim_video_command = ["-start_number", str(first_frame), "-vframes", str(num_frames)]
         input_options = ["-r", str(fps), "-i", pattern]
         encoding_options = ["-c:v", "libx264", "-crf", "25", "-pix_fmt", "yuv420p"]
         subprocess.call([ffmpeg, *input_options, *trim_video_command, *encoding_options, output_video_path])
