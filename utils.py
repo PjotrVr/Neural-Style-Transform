@@ -35,6 +35,7 @@ def load_image(image_path, target_shape=None):
     image /= 255.0  # Pixel values range [0, 1]
     return image
 
+
 def prepare_image(image_path, target_shape, device):
     image = load_image(image_path, target_shape=target_shape)
 
@@ -48,22 +49,25 @@ def prepare_image(image_path, target_shape, device):
 
     return image
 
+
 def save_image(image, image_path):
     if len(image.shape) == 2:
         image = np.stack((image,) * 3, axis=-1)
 
     cv.imwrite(image_path, image[:, :, ::-1])
 
+
 def generate_output_image_name(config):
     prefix = os.path.basename(config["image"]).split(".")[0] + "_" + os.path.basename(config["style"]).split(".")[0]
     if "reconstruct_script" in config:
-        suffix = f'_o_{config["optimizer"]}_h_{str(config["height"])}_m_{config["model"]}{config["image_format"][1]}'
+        suffix = f'_{config["optimizer"]}_{config["model"]}{config["image_format"][1]}'
     else:
-        suffix = f'_o_{config["optimizer"]}_i_{config["init_method"]}_h_{str(config["height"])}_m_{config["model"]}_cw_{config["content_weight"]}_sw_{config["style_weight"]}_tv_{config["tv_weight"]}{config["image_format"][1]}'
+        suffix = f'_{config["optimizer"]}_{config["model"]}_cw_{config["content_weight"]}_sw_{config["style_weight"]}_tv_{config["tv_weight"]}{config["image_format"][1]}'
     
     return prefix + suffix
 
-def save_and_maybe_display(optimizing_image, dump_path, config, image_id, num_iterations, should_display=False):
+
+def save_and_display(optimizing_image, dump_path, config, image_id, num_iterations, should_display=False):
     saving_freq = config["freq"]
     output_image = optimizing_image.squeeze(axis=0).to("cpu").detach().numpy()
     output_image = np.moveaxis(output_image, 0, 2)
@@ -82,6 +86,7 @@ def save_and_maybe_display(optimizing_image, dump_path, config, image_id, num_it
         plt.imshow(np.uint8(get_uint8_range(output_image)))
         plt.show()
 
+
 def get_uint8_range(x):
     if isinstance(x, np.ndarray):
         x -= np.min(x)
@@ -92,6 +97,7 @@ def get_uint8_range(x):
 
     else:
         raise ValueError(f"Expected numpy array got {type(x)}")
+
 
 def prepare_model(model, device):
     if model == "vgg16":
@@ -125,6 +131,7 @@ def gram_matrix(x, should_normalize=True):
 
 def total_variation(y):
     return torch.sum(torch.abs(y[:, :, :, :-1] - y[:, :, :, 1:])) + torch.sum(torch.abs(y[:, :, :-1, :] - y[:, :, 1:, :]))
+
 
 # Creating video from results
 def create_video(results_path, image_format):

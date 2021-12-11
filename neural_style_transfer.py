@@ -2,7 +2,6 @@
 
 import numpy as np
 import os
-import argparse
 import json
 
 import torch
@@ -35,6 +34,7 @@ def build_loss(neural_net, optimizing_image, target_representations, content_fea
 
     return total_loss, content_loss, style_loss, tv_loss
 
+
 def make_tuning_step(neural_net, optimizer, target_representations, content_feature_maps_index, style_feature_maps_indices, config):
     def tuning_step(optimizing_image):
         # Calculate loss
@@ -51,11 +51,11 @@ def make_tuning_step(neural_net, optimizer, target_representations, content_feat
 
     return tuning_step
 
+
 def neural_style_transfer(config):
     content_image_path = os.path.join(config["content_images_dir"], config["image"])
     style_image_path = os.path.join(config["style_images_dir"], config["style"])
 
-    # Output directory name
     output_dir_name = f"styled_{os.path.split(content_image_path)[1].split('.')[0]}_{os.path.split(style_image_path)[1].split('.')[0]}"
 
     dump_path = os.path.join(config["output_images_dir"], output_dir_name)
@@ -83,7 +83,7 @@ def neural_style_transfer(config):
     optimizing_image = Variable(init_image, requires_grad=True)
 
     neural_net, content_feature_maps_index_name, style_feature_maps_indices_names = utils.prepare_model(config["model"], device)
-    print(f'Using {config["model"]} in the optimization procedure')
+    print(f'Using {config["model"]} model and {config["optimizer"]} optimizer')
 
     content_image_set_of_feature_maps = neural_net(content_image)
     style_image_set_of_feature_maps = neural_net(style_image)
@@ -101,8 +101,8 @@ def neural_style_transfer(config):
             total_loss, content_loss, style_loss, tv_loss = tuning_step(optimizing_image)
             
             with torch.no_grad():
-                print(f'Epoch: {cnt:03}, Total loss={total_loss.item():12.4f}, Content loss={config["content_weight"] * content_loss.item():12.4f}, Style loss={config["style_weight"] * style_loss.item():12.4f}, Tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
-                utils.save_and_maybe_display(optimizing_image, dump_path, config, cnt, num_iterations, should_display=False)
+                print(f'Epoch: {cnt+1}/{num_iterations}, Total loss={total_loss.item():12.4f}, Content loss={config["content_weight"] * content_loss.item():12.4f}, Style loss={config["style_weight"] * style_loss.item():12.4f}, Tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
+                utils.save_and_display(optimizing_image, dump_path, config, cnt, num_iterations, should_display=False)
     
     elif config["optimizer"] == "lbfgs":
         optimizer = LBFGS((optimizing_image,), max_iter=num_iterations, line_search_fn="strong_wolfe")
@@ -112,14 +112,15 @@ def neural_style_transfer(config):
             nonlocal cnt
             if torch.is_grad_enabled():
                 optimizer.zero_grad()
+
             total_loss, content_loss, style_loss, tv_loss = build_loss(neural_net, optimizing_image, target_representations, content_feature_maps_index_name[0], style_feature_maps_indices_names[0], config)
             
             if total_loss.requires_grad:
                 total_loss.backward()
 
             with torch.no_grad():
-                print(f'Epoch: {cnt:03}, Total loss={total_loss.item():12.4f}, Content loss={config["content_weight"] * content_loss.item():12.4f}, Style loss={config["style_weight"] * style_loss.item():12.4f}, Tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
-                utils.save_and_maybe_display(optimizing_image, dump_path, config, cnt, num_iterations, should_display=False)
+                print(f'Epoch: {cnt+1}/{num_iterations}, Total loss={total_loss.item():12.4f}, Content loss={config["content_weight"] * content_loss.item():12.4f}, Style loss={config["style_weight"] * style_loss.item():12.4f}, Tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
+                utils.save_and_display(optimizing_image, dump_path, config, cnt, num_iterations, should_display=False)
 
             cnt += 1
             return total_loss
@@ -134,10 +135,11 @@ if __name__ == "__main__":
     with open("config.json", "r", encoding="utf8") as json_file:
         optimization_config = json.load(json_file)
     
-    # Fixing paths
-    optimization_config["content_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["content_images_dir"])
-    optimization_config["style_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["style_images_dir"])
-    optimization_config["output_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["output_images_dir"])
+    if optimization_config["path_type"] == "relative":
+        # Fixing paths
+        optimization_config["content_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["content_images_dir"])
+        optimization_config["style_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["style_images_dir"])
+        optimization_config["output_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["output_images_dir"])
 
     '''
     # Copying optimization config into config file
@@ -146,7 +148,6 @@ if __name__ == "__main__":
     '''
     
     results_path = neural_style_transfer(optimization_config)
-
 
     if optimization_config["video"]:
         utils.create_video(results_path, optimization_config["image_format"])

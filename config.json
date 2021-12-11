@@ -1,15 +1,16 @@
 {
-    "image": "domagoj.jpg",
-    "style": "cubist.jpg",
+    "image": "lion.jpg",
+    "style": "flowers_crop.jpg",
     "height": 400,
     "content_weight": 100000.0,
     "style_weight": 30000.0,
     "tv_weight": 1.0,
-    "optimizer": "lbfgs",
+    "optimizer": "adam",
     "model": "vgg19",
     "init_method": "content",
-    "freq": -1,
-    "video": false,
+    "freq": 1,
+    "video": true,
+    "path_type": "relative",
     "content_images_dir": "data/input_images",
     "style_images_dir": "data/style_images",
     "output_images_dir": "data/output_images",
@@ -17,5 +18,5 @@
         4,
         ".jpg"
     ],
-    "iterations": 300
+    "iterations": 3000
 }
