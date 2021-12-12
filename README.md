@@ -29,5 +29,3 @@ Parameters: <br>
 * `init_method` - initialization method for image - `content` or`random` <br>
 * `iterations` - number of iterations/epochs for training - int number, eg. `400` <br>
 
-## Examples
-TODO: add examples and explanations for weights
