@@ -14,6 +14,7 @@ from models.vgg_nets import Vgg16, Vgg19
 
 IMAGENET_MEAN_255 = [123.675, 116.28, 103.53]
 IMAGENET_STD_NEUTRAL = [1, 1, 1]
+VIDEO_NAME = "training_footage.mp4"
 
 def load_image(image_path, target_shape=None):
     if not os.path.exists(image_path):
@@ -72,8 +73,7 @@ def save_and_display(optimizing_image, dump_path, config, image_id, num_iteratio
     output_image = optimizing_image.squeeze(axis=0).to("cpu").detach().numpy()
     output_image = np.moveaxis(output_image, 0, 2)
 
-    # Frequency -1 only saves last image after training
-    # Frequency 1 saves all images while training
+    # Frequency 0 saves last image, frequency N saves new image after every N steps
     if image_id == num_iterations-1 or (saving_freq > 0 and image_id % saving_freq == 0):
         image_format = config["image_format"]
         output_image_name = str(image_id).zfill(image_format[0]) + image_format[1] if saving_freq != -1 else generate_output_image_name(config)
@@ -102,10 +102,8 @@ def get_uint8_range(x):
 def prepare_model(model, device):
     if model == "vgg16":
         model = Vgg16(requires_grad=False, show_progress=True)
-
     elif model == "vgg19":
         model = Vgg19(requires_grad=False, show_progress=True)
-
     else:
         raise ValueError(f"{model} not supported")
 
@@ -135,8 +133,7 @@ def total_variation(y):
 
 # Creating video from results
 def create_video(results_path, image_format):
-    output_file_name = "full_training_footage.mp4"
-    fps = 30
+    fps = 60
     first_frame = 0
     num_frames = len(os.listdir(results_path))
 
@@ -144,7 +141,7 @@ def create_video(results_path, image_format):
     if shutil.which(ffmpeg):
         image_name_format = "%" + str(image_format[0]) + "d" + image_format[1]
         pattern = os.path.join(results_path, image_name_format)
-        output_video_path = os.path.join(results_path, output_file_name)
+        output_video_path = os.path.join(results_path, VIDEO_NAME)
 
         trim_video_command = ["-start_number", str(first_frame), "-vframes", str(num_frames)]
         input_options = ["-r", str(fps), "-i", pattern]
