@@ -4,39 +4,16 @@ Creating fun images/videos by using Neural Style Transformation algorithms.
 
 Some examples:
 
-<!-- <p float="left">
-  <img src="data/input_images/dog.jpeg" width="100" />
+<p float="left">
+  <img src="assets/dog.jpeg" width="100" />
   <span style="font-size: 30px; margin: 0 10px;">+</span>
-  <img src="data/style_images/wave_crop.jpg" width="100" />
+  <img src="assets/wave.jpg" width="100" />
   <span style="font-size: 30px; margin: 0 10px;">=</span>
-  <img src="data/output_images/styled_dog_wave_crop/0300.jpg" width="100" />
-</p> -->
+  <img src="assets/dog_wave.jpg" width="100" />
+</p>
 
-<table style="border-collapse: collapse; border: 0;">
-  <tr style="border: none;">
-    <td align="center" width="100" style="border: none;">
-      <img src="data/input_images/dog.jpeg" width="100" />
-    </td>
-    <td align="center" style="border: none; font-size: 50px;" >
-      +
-    </td>
-    <td align="center" width="100" style="border: none;">
-      <img src="data/style_images/wave_crop.jpg" width="100" />
-    </td>
-    <td align="center" style="border: none; font-size: 50px;">
-      =
-    </td>
-    <td align="center" width="100" style="border: none;">
-      <img src="data/output_images/styled_dog_wave_crop/0300.jpg" width="100" />
-    </td>
-  </tr>
-</table>
-
-And video of lion being styled with cubist style: <br>
-<video width="320" controls>
-
-<source src="data/output_images/styled_lion_cubist/training_footage.mp4" type="video/mp4">
-</video>
+GIF of lion image being styled with cubist style: <br>
+<img src="assets/lion_cubist_training_footage.gif"></img>
 
 ## Installation
 
@@ -50,7 +27,7 @@ Install: terminal -> `pip3 install -r requirements.txt`.
 
 ## Usage
 
-All parameters are setup in `config.json` file
+All parameters are setup in `config.json` file.
 
 Parameters: <br>
 
