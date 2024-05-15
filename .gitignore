@@ -1,0 +1,7 @@
+**__pycache__*
+data/input_images/*
+!data/input_images/tubingen.png
+!data/input_images/taj_mahal.png
+!data/input_images/lion.jpg
+!data/input_images/dog.jpeg
+data/output_images/*
