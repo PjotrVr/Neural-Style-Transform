@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import numpy as np
 import os
 import json
@@ -141,12 +139,6 @@ if __name__ == "__main__":
         optimization_config["style_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["style_images_dir"])
         optimization_config["output_images_dir"] = os.path.join(os.path.dirname(__file__), optimization_config["output_images_dir"])
 
-    '''
-    # Copying optimization config into config file
-    with open("config.json", "w", encoding="utf8") as json_file:
-        json.dump(optimization_config, json_file, indent=4)
-    '''
-    
     results_path = neural_style_transfer(optimization_config)
 
     if optimization_config["video"]:
